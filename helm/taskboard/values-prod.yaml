@@ -1,10 +1,10 @@
 # AWS EKS (managed by Argo CD, see argocd/application.yaml). CI bumps the tags below to the commit SHA.
 backend:
   image: ghcr.io/venkat1701/taskboard-backend
-  tag: "1.1.0"
+  tag: "5e6ddd4e7e09c0cb03a970d11a961bb7b4c6da90"
 frontend:
   image: ghcr.io/venkat1701/taskboard-frontend
-  tag: "1.1.0"
+  tag: "5e6ddd4e7e09c0cb03a970d11a961bb7b4c6da90"
 postgres:
   storageClass: gp3
 ingress:
