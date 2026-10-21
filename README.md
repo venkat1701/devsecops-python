@@ -249,6 +249,10 @@ open http://taskboard.localhost:8080
 
 ### AWS EKS
 
+Shortcut: after `terraform apply`, `./scripts/eks-up.sh` performs every step below (separate kubeconfig in
+`.kube/eks.yaml`, Traefik on an AWS NLB, monitoring, Argo CD) and smoke-tests the app through the load balancer;
+`./scripts/eks-down.sh` removes the load balancer and EBS volume and then runs `terraform destroy`.
+
 ```bash
 cd terraform && terraform apply && $(terraform output -raw configure_kubectl) && cd ..
 kubectl apply -f k8s/namespace.yaml -f k8s/storageclass-gp3.yaml
