@@ -1,16 +1,31 @@
 .idea/
 .vscode/
+.DS_Store
 node_modules/
 dist/
 target/
 *.log
 .env
-.terraform/
-*.tfstate
-*.tfstate.*
+.env.*
+!.env.example
 
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
+.venv/
+venv/
+.pytest_cache/
 *.db
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+*.tfplan
+tfplan
+
+# Local kube
+kubeconfig*
+.kube/
