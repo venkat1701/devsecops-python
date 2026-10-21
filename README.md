@@ -182,6 +182,10 @@ Triggers: push to `main`, pull requests to `main`, manual dispatch.
 | 4 | **gitops** | rewrites the tags in `helm/taskboard/values-prod.yaml` to the commit SHA and pushes `chore(gitops): … [skip ci]` | — |
 
 Pull requests run stages 1–2 without pushing, so a PR shows test and security results before merge.
+
+**Verified:** every job green on the first run (see the repository's Actions tab); images are published as
+[`ghcr.io/venkat1701/taskboard-backend`](https://github.com/venkat1701/devsecops-python/pkgs/container/taskboard-backend)
+and `taskboard-frontend` with the commit SHA as the only tag (screenshots in `demo/screenshots/`).
 Image tags are **always the commit SHA**, never `latest`, so `kubectl describe pod` → image tag → `git show <sha>`.
 
 ## 9. DevSecOps — Trivy
@@ -266,8 +270,8 @@ helm upgrade --install taskboard ./helm/taskboard -n taskboard -f helm/taskboard
 kubectl get svc -n traefik traefik   # EXTERNAL-IP = load balancer hostname → open it in the browser
 ```
 
-GHCR packages are private by default. Either make both packages public (GitHub → Packages → Settings) or create a pull
-secret and pass it to the chart:
+The GHCR packages are linked to this public repository and inherit its **public** visibility, so clusters pull them
+anonymously. If you fork into a private repo, create a pull secret and pass it to the chart:
 
 ```bash
 kubectl -n taskboard create secret docker-registry ghcr-pull --docker-server=ghcr.io \
@@ -280,6 +284,12 @@ kubectl -n taskboard create secret docker-registry ghcr-pull --docker-server=ghc
 `git push` → CI tests, scans and pushes `:<sha>` images → CI commits the new tag to `values-prod.yaml` →
 Argo CD notices the commit and syncs the cluster (automated sync with `prune` and `selfHeal`, so manual `kubectl edit`
 drift is reverted). Rollback = `git revert` of the tag commit.
+
+Try it locally: `./argocd/install.sh` installs Argo CD into the k3d cluster, and
+`kubectl apply -n argocd -f argocd/application-local.yaml` registers an Application that tracks this GitHub repo
+(values-prod.yaml + k3d overrides) into namespace `taskboard-gitops`. Verified: **Synced / Healthy** at the CI bot's
+`chore(gitops)` commit, running the exact SHA-tagged GHCR images, and a manual `kubectl scale` was reverted by
+self-heal within ~6 s (`demo/screenshots/argocd-app.png`).
 
 ## 12. Observability
 
