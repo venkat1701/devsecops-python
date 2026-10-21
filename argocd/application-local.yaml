@@ -1,0 +1,38 @@
+# Same GitOps flow as application.yaml, pointed at the local k3d cluster for the demo:
+# it tracks values-prod.yaml (the tag CI bumps) and only overrides what differs from EKS.
+#   kubectl apply -n argocd -f argocd/application-local.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: taskboard-gitops
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/venkat1701/devsecops-python.git
+    targetRevision: main
+    path: helm/taskboard
+    helm:
+      releaseName: taskboard
+      valueFiles:
+        - values-prod.yaml
+      valuesObject:
+        postgres:
+          storageClass: ""                    # k3d default (local-path) instead of EBS gp3
+        ingress:
+          host: gitops.taskboard.localhost    # side by side with the Helm-installed release
+        monitoring:
+          grafanaDashboard:
+            enabled: false                    # dashboard already provided by the Helm release
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: taskboard-gitops
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
