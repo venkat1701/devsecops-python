@@ -212,6 +212,10 @@ See [`terraform/README.md`](terraform/README.md). Summary: VPC `10.20.0.0/16` ac
 **2 public + 2 private subnets**, a NAT gateway, and an **EKS 1.35** cluster with a managed node group (2× t3.medium,
 AL2023) plus add-ons vpc-cni, coredns, kube-proxy, pod-identity-agent, metrics-server and aws-ebs-csi-driver.
 `terraform plan` → **61 to add, 0 to change, 0 to destroy** (`demo/evidence/terraform-plan.txt`).
+**Applied and verified** in ap-south-1: `Apply complete! Resources: 61 added`, EKS 1.35 ACTIVE with 2 Ready AL2023
+nodes and all six add-ons (`demo/evidence/terraform-apply.txt`, `demo/screenshots/aws-vpc-eks.png`). On that cluster
+`./scripts/eks-up.sh` brought up Traefik (AWS NLB), monitoring and Argo CD; TaskBoard synced Healthy, the smoke test
+passed through the load balancer and the HPA scaled 2 → 3 under load (`demo/screenshots/eks-*.png`).
 `terraform.tfvars.example` documents the inputs; credentials come from the AWS CLI chain and never touch Git.
 Remember: `terraform destroy` when finished.
 
