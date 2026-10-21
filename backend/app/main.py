@@ -1,34 +1,38 @@
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from prometheus_client import Counter
+from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
-from prometheus_fastapi_instrumentator import Instrumentator
 
 from .config import settings
-from .db import Base, engine, get_db
+from .db import get_db
 from .models import Task
 from .schemas import StatsOut, TaskCreate, TaskOut, TaskUpdate
 
-app = FastAPI(title=settings.app_name, version="1.0.0")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+# Schema is owned by Alembic (run before Uvicorn in the container); tests build their own schema.
+app = FastAPI(title=settings.app_name, version=settings.app_version)
+app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins, allow_methods=["*"], allow_headers=["*"])
+Instrumentator(excluded_handlers=["/metrics"]).instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
 
-@app.on_event("startup")
-def startup():
-    # Production containers run Alembic before Uvicorn; create_all keeps tests self-contained.
-    Base.metadata.create_all(bind=engine)
+# Business metric alongside the default HTTP request/latency metrics.
+TASK_EVENTS = Counter("taskboard_task_events_total", "Task lifecycle events", ["event"])
 
 @app.get("/")
 def root():
-    return {"service": settings.app_name, "version": "1.0.0", "docs": "/docs"}
+    return {"service": settings.app_name, "version": settings.app_version, "docs": "/docs"}
 
 @app.get("/health")
+@app.get("/api/health", include_in_schema=False)
 def health():
     return {"status": "UP"}
 
 @app.get("/ready")
 def ready(db: Session = Depends(get_db)):
-    db.execute(select(func.count(Task.id)))
+    try:
+        db.execute(select(func.count(Task.id)))
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail="Database not ready") from exc
     return {"status": "READY"}
 
 @app.get("/api/tasks", response_model=list[TaskOut])
@@ -54,6 +58,7 @@ def create_task(payload: TaskCreate, db: Session = Depends(get_db)):
     db.add(task)
     db.commit()
     db.refresh(task)
+    TASK_EVENTS.labels(event="created").inc()
     return task
 
 @app.put("/api/tasks/{task_id}", response_model=TaskOut)
@@ -65,6 +70,7 @@ def update_task(task_id: int, payload: TaskUpdate, db: Session = Depends(get_db)
         setattr(task, key, value)
     db.commit()
     db.refresh(task)
+    TASK_EVENTS.labels(event="updated").inc()
     return task
 
 @app.delete("/api/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -74,3 +80,4 @@ def delete_task(task_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Task not found")
     db.delete(task)
     db.commit()
+    TASK_EVENTS.labels(event="deleted").inc()

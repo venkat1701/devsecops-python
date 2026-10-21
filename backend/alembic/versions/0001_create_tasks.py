@@ -15,7 +15,7 @@ def upgrade():
         sa.Column("priority", sa.String(length=20), nullable=False, server_default="MEDIUM"),
         sa.Column("status", sa.String(length=30), nullable=False, server_default="TODO"),
         sa.Column("assignee", sa.String(length=120), nullable=False, server_default="Unassigned"),
-        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False),
+        sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.func.now()),
     )
 
 def downgrade():
