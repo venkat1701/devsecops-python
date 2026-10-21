@@ -1,15 +1,18 @@
-{{- if .Values.monitoring.serviceMonitor.enabled }}
+{{- if and .Values.monitoring.serviceMonitor.enabled (.Capabilities.APIVersions.Has "monitoring.coreos.com/v1/ServiceMonitor") }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: {{ include "taskboard.fullname" . }}-backend
   labels:
-    release: kube-prometheus-stack
+    {{- include "taskboard.labels" . | nindent 4 }}
+    {{- with .Values.monitoring.serviceMonitor.labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
 spec:
   selector:
-    matchLabels: {app: taskboard-backend}
+    matchLabels: {{- include "taskboard.selector" (dict "ctx" . "component" "backend") | nindent 6 }}
   endpoints:
     - port: http
       path: /metrics
-      interval: 15s
+      interval: {{ .Values.monitoring.serviceMonitor.interval }}
 {{- end }}

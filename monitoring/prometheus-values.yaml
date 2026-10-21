@@ -1,6 +1,32 @@
-grafana:
-  enabled: true
+# kube-prometheus-stack values (Prometheus Operator + Prometheus + Grafana + node/kube-state exporters)
+#   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+#   helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+#     -n monitoring --create-namespace -f monitoring/prometheus-values.yaml
 prometheus:
   prometheusSpec:
+    # Discover ServiceMonitors from every namespace/release, not only ones labelled for this Helm release.
     serviceMonitorSelectorNilUsesHelmValues: false
     serviceMonitorNamespaceSelector: {}
+    podMonitorSelectorNilUsesHelmValues: false
+    retention: 2d
+    resources:
+      requests: {cpu: 200m, memory: 512Mi}
+
+grafana:
+  enabled: true
+  adminUser: admin
+  adminPassword: taskboard-admin   # class demo only; use grafana.admin.existingSecret in real environments
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      searchNamespace: ALL           # pick up the TaskBoard dashboard ConfigMap from the app namespace
+
+alertmanager:
+  enabled: false                     # not needed for the capstone; keeps the footprint small
+
+# Control-plane components are not scrapeable on managed clusters (EKS) or k3s, so skip their red targets.
+kubeEtcd: {enabled: false}
+kubeControllerManager: {enabled: false}
+kubeScheduler: {enabled: false}
+kubeProxy: {enabled: false}
