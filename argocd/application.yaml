@@ -1,0 +1,32 @@
+# Argo CD watches this repo; when CI bumps the image tags in values-prod.yaml, Argo CD syncs the cluster.
+#   kubectl apply -n argocd -f argocd/application.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: taskboard
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io   # deleting the Application also removes its resources
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/venkat1701/devsecops-python.git
+    targetRevision: main
+    path: helm/taskboard
+    helm:
+      releaseName: taskboard
+      valueFiles:
+        - values-prod.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: taskboard
+  syncPolicy:
+    automated:
+      prune: true      # remove resources deleted from Git
+      selfHeal: true   # revert manual drift (kubectl edit) back to what Git says
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    retry:
+      limit: 5
+      backoff: {duration: 10s, factor: 2, maxDuration: 3m}
