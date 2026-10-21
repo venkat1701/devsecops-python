@@ -20,11 +20,11 @@ module.ebs_csi_pod_identity.data.aws_iam_policy_document.base[0]: Read complete 
 module.eks.module.eks_managed_node_group["main"].data.aws_iam_policy_document.assume_role_policy[0]: Read complete after 0s [id=2560088296]
 module.ebs_csi_pod_identity.data.aws_iam_policy_document.ebs_csi[0]: Reading...
 module.ebs_csi_pod_identity.data.aws_iam_policy_document.ebs_csi[0]: Read complete after 0s [id=3979039874]
-module.eks.data.aws_caller_identity.current[0]: Read complete after 0s [id=593241950079]
+module.eks.data.aws_caller_identity.current[0]: Read complete after 0s [id=<aws-account-id>]
 module.eks.data.aws_iam_session_context.current[0]: Reading...
-module.eks.data.aws_iam_session_context.current[0]: Read complete after 0s [id=arn:aws:iam::593241950079:user/krish.jaiswal@healthbay.ai]
-module.eks.module.kms.data.aws_caller_identity.current[0]: Read complete after 0s [id=593241950079]
-module.ebs_csi_pod_identity.data.aws_caller_identity.current[0]: Read complete after 0s [id=593241950079]
+module.eks.data.aws_iam_session_context.current[0]: Read complete after 0s [id=arn:aws:iam::<aws-account-id>:user/<iam-user>]
+module.eks.module.kms.data.aws_caller_identity.current[0]: Read complete after 0s [id=<aws-account-id>]
+module.ebs_csi_pod_identity.data.aws_caller_identity.current[0]: Read complete after 0s [id=<aws-account-id>]
 data.aws_availability_zones.available: Read complete after 1s [id=ap-south-1]
 module.eks.module.eks_managed_node_group["main"].data.aws_ssm_parameter.ami[0]: Reading...
 module.eks.module.eks_managed_node_group["main"].data.aws_ssm_parameter.ami[0]: Read complete after 1s [id=/aws/service/eks/optimized-ami/1.35/amazon-linux-2023/x86_64/standard/recommended/release_version]
@@ -345,7 +345,7 @@ Terraform will perform the following actions:
       + id                = (known after apply)
       + kubernetes_groups = (known after apply)
       + modified_at       = (known after apply)
-      + principal_arn     = "arn:aws:iam::593241950079:user/krish.jaiswal@healthbay.ai"
+      + principal_arn     = "arn:aws:iam::<aws-account-id>:user/<iam-user>"
       + region            = "ap-south-1"
       + tags_all          = {
           + "Environment" = "dev"
@@ -363,7 +363,7 @@ Terraform will perform the following actions:
       + id            = (known after apply)
       + modified_at   = (known after apply)
       + policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-      + principal_arn = "arn:aws:iam::593241950079:user/krish.jaiswal@healthbay.ai"
+      + principal_arn = "arn:aws:iam::<aws-account-id>:user/<iam-user>"
       + region        = "ap-south-1"
 
       + access_scope {
@@ -1569,7 +1569,7 @@ Terraform will perform the following actions:
 
           + principals {
               + identifiers = [
-                  + "arn:aws:iam::593241950079:root",
+                  + "arn:aws:iam::<aws-account-id>:root",
                 ]
               + type        = "AWS"
             }
@@ -1600,7 +1600,7 @@ Terraform will perform the following actions:
 
           + principals {
               + identifiers = [
-                  + "arn:aws:iam::593241950079:user/krish.jaiswal@healthbay.ai",
+                  + "arn:aws:iam::<aws-account-id>:user/<iam-user>",
                 ]
               + type        = "AWS"
             }

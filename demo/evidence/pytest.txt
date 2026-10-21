@@ -1,7 +1,7 @@
 ============================= test session starts ==============================
-platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.7.0 -- /Users/healthbay/Desktop/capstone/devsecops-python/backend/.venv/bin/python3
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.7.0 -- ~/devsecops-python/backend/.venv/bin/python3
 cachedir: .pytest_cache
-rootdir: /Users/healthbay/Desktop/capstone/devsecops-python/backend
+rootdir: ~/devsecops-python/backend
 configfile: pytest.ini
 testpaths: tests
 plugins: anyio-4.15.1
