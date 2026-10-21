@@ -1,0 +1,4 @@
+SERVICE    IMAGE                      STATUS                    PORTS
+backend    taskboard-backend:local    Up 23 seconds (healthy)   0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+frontend   taskboard-frontend:local   Up 5 seconds (healthy)    0.0.0.0:3000->8080/tcp, [::]:3000->8080/tcp
+postgres   postgres:16-alpine         Up 29 seconds (healthy)   127.0.0.1:55432->5432/tcp

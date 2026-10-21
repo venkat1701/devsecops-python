@@ -1,0 +1,9 @@
+$ kubectl get hpa -n taskboard
+NAME                          REFERENCE                                TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+taskboard-taskboard-backend   Deployment/taskboard-taskboard-backend   cpu: 4%/60%   2         6         4          7m40s
+
+$ kubectl get events -n taskboard --field-selector involvedObject.kind=HorizontalPodAutoscaler
+LAST SEEN   TYPE     REASON              OBJECT                                                MESSAGE
+7m25s       Normal   SuccessfulRescale   horizontalpodautoscaler/taskboard-taskboard-backend   New size: 2; reason: Current number of replicas below Spec.MinReplicas
+2m40s       Normal   SuccessfulRescale   horizontalpodautoscaler/taskboard-taskboard-backend   New size: 3; reason: cpu resource utilization (percentage of request) above target
+54s         Normal   SuccessfulRescale   horizontalpodautoscaler/taskboard-taskboard-backend   New size: 4; reason: cpu resource utilization (percentage of request) above target

@@ -1,0 +1,26 @@
+$ kubectl get pods -n taskboard -o wide
+NAME                                            READY   STATUS    RESTARTS   AGE     IP           NODE                     NOMINATED NODE   READINESS GATES
+taskboard-taskboard-backend-7b8c6fb467-k26s6    1/1     Running   0          73s     10.42.1.12   k3d-taskboard-agent-0    <none>           <none>
+taskboard-taskboard-backend-7b8c6fb467-x2vst    1/1     Running   0          67s     10.42.0.19   k3d-taskboard-server-0   <none>           <none>
+taskboard-taskboard-frontend-759bbf8c58-hgsvz   1/1     Running   0          73s     10.42.0.18   k3d-taskboard-server-0   <none>           <none>
+taskboard-taskboard-frontend-759bbf8c58-zcdhz   1/1     Running   0          61s     10.42.1.13   k3d-taskboard-agent-0    <none>           <none>
+taskboard-taskboard-postgres-66ff767fc8-w6rh7   1/1     Running   0          3m54s   10.42.0.12   k3d-taskboard-server-0   <none>           <none>
+
+$ kubectl get svc,ingress,hpa -n taskboard
+NAME                                   TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+service/taskboard-taskboard-backend    ClusterIP   10.43.144.80    <none>        8000/TCP   3m54s
+service/taskboard-taskboard-frontend   ClusterIP   10.43.240.215   <none>        80/TCP     3m54s
+service/taskboard-taskboard-postgres   ClusterIP   10.43.157.237   <none>        5432/TCP   3m54s
+
+NAME                                            CLASS     HOSTS                 ADDRESS                     PORTS   AGE
+ingress.networking.k8s.io/taskboard-taskboard   traefik   taskboard.localhost   192.168.96.3,192.168.96.4   80      3m54s
+
+NAME                                                              REFERENCE                                TARGETS        MINPODS   MAXPODS   REPLICAS   AGE
+horizontalpodautoscaler.autoscaling/taskboard-taskboard-backend   Deployment/taskboard-taskboard-backend   cpu: 26%/60%   2         6         2          3m54s
+
+$ helm list -A
+NAME                 	NAMESPACE  	REVISION	UPDATED                                	STATUS  	CHART                        	APP VERSION
+kube-prometheus-stack	monitoring 	2       	2026-10-21 13:47:11.8952 +0530 IST     	deployed	kube-prometheus-stack-92.11.0	v0.94.1    
+taskboard            	taskboard  	2       	2026-10-21 13:47:33.296779 +0530 IST   	deployed	taskboard-1.1.0              	1.1.0      
+traefik              	kube-system	1       	2026-10-21 08:11:08.010806134 +0000 UTC	deployed	traefik-39.0.701+up39.0.7    	v3.6.12    
+traefik-crd          	kube-system	1       	2026-10-21 08:11:05.2056058 +0000 UTC  	deployed	traefik-crd-39.0.701+up39.0.7	v3.6.12    
