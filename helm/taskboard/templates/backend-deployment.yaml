@@ -2,28 +2,57 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "taskboard.fullname" . }}-backend
+  labels:
+    {{- include "taskboard.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
 spec:
-  replicas: {{ .Values.replicaCount }}
+  {{- if not .Values.hpa.enabled }}
+  replicas: {{ .Values.backend.replicas }}
+  {{- end }}
   selector:
-    matchLabels: {app: taskboard-backend}
+    matchLabels: {{- include "taskboard.selector" (dict "ctx" . "component" "backend") | nindent 6 }}
   template:
     metadata:
-      labels: {app: taskboard-backend}
+      labels:
+        {{- include "taskboard.labels" . | nindent 8 }}
+        app.kubernetes.io/component: backend
+      annotations:
+        checksum/db-secret: {{ include (print $.Template.BasePath "/postgres.yaml") . | sha256sum }}
     spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+        runAsUser: 10001
+        runAsGroup: 10001
+      initContainers:
+        # Alembic runs on start-up, so wait until PostgreSQL accepts connections.
+        - name: wait-for-postgres
+          image: {{ .Values.postgres.image }}
+          command: ["sh", "-c", "until pg_isready -h {{ include "taskboard.postgresHost" . }} -p 5432 -U {{ .Values.postgres.username }} -d {{ .Values.postgres.database }}; do echo waiting for postgres; sleep 2; done"]
+          securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+          resources:
+            requests: {cpu: 10m, memory: 16Mi}
+            limits: {cpu: 100m, memory: 64Mi}
       containers:
         - name: backend
-          image: "{{ .Values.backend.image }}:{{ .Values.backend.tag }}"
-          ports: [{containerPort: 8000}]
+          image: {{ include "taskboard.backendImage" . | quote }}
+          imagePullPolicy: {{ .Values.backend.pullPolicy }}
+          ports: [{name: http, containerPort: 8000}]
           env:
             - name: DATABASE_URL
-              value: "postgresql+psycopg://{{ .Values.postgres.username }}:{{ .Values.postgres.password }}@{{ .Values.postgres.host }}:5432/{{ .Values.postgres.database }}"
+              valueFrom: {secretKeyRef: {name: {{ include "taskboard.fullname" . }}-postgres, key: database-url}}
+          securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+          startupProbe:
+            httpGet: {path: /health, port: http}
+            periodSeconds: 5
+            failureThreshold: 24     # up to 2 minutes for migrations
           readinessProbe:
-            httpGet: {path: /ready, port: 8000}
-            initialDelaySeconds: 10
+            httpGet: {path: /ready, port: http}
             periodSeconds: 10
           livenessProbe:
-            httpGet: {path: /health, port: 8000}
-            initialDelaySeconds: 20
+            httpGet: {path: /health, port: http}
             periodSeconds: 15
-          resources:
-{{ toYaml .Values.resources | indent 12 }}
+          resources: {{- toYaml .Values.backend.resources | nindent 12 }}

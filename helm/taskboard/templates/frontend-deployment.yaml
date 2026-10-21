@@ -1,20 +1,38 @@
 apiVersion: apps/v1
 kind: Deployment
-metadata: {name: taskboard-frontend, labels: {app: taskboard-frontend}}
+metadata:
+  name: {{ include "taskboard.fullname" . }}-frontend
+  labels:
+    {{- include "taskboard.labels" . | nindent 4 }}
+    app.kubernetes.io/component: frontend
 spec:
-  replicas: {{ .Values.replicaCount }}
-  selector: {matchLabels: {app: taskboard-frontend}}
+  replicas: {{ .Values.frontend.replicas }}
+  selector:
+    matchLabels: {{- include "taskboard.selector" (dict "ctx" . "component" "frontend") | nindent 6 }}
   template:
-    metadata: {labels: {app: taskboard-frontend}}
+    metadata:
+      labels:
+        {{- include "taskboard.labels" . | nindent 8 }}
+        app.kubernetes.io/component: frontend
     spec:
       {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-{{ toYaml . | indent 8 }}
+      imagePullSecrets: {{- toYaml . | nindent 8 }}
       {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: {type: RuntimeDefault}
+        runAsUser: 101
+        runAsGroup: 101
       containers:
-      - name: frontend
-        image: "{{ .Values.frontend.image }}:{{ .Values.frontend.tag }}"
-        ports: [{containerPort: 80}]
-        readinessProbe: {httpGet: {path: /, port: 80}, initialDelaySeconds: 5}
-        livenessProbe: {httpGet: {path: /, port: 80}, initialDelaySeconds: 10}
-        resources: {requests: {cpu: 50m, memory: 64Mi}, limits: {cpu: 200m, memory: 128Mi}}
+        - name: frontend
+          image: {{ include "taskboard.frontendImage" . | quote }}
+          imagePullPolicy: {{ .Values.frontend.pullPolicy }}
+          ports: [{name: http, containerPort: 8080}]
+          env:
+            # Nginx proxies /api here (rendered into its config by envsubst at start-up).
+            - name: BACKEND_URL
+              value: "http://{{ include "taskboard.fullname" . }}-backend:8000"
+          securityContext: {allowPrivilegeEscalation: false, capabilities: {drop: [ALL]}}
+          readinessProbe: {httpGet: {path: /, port: http}, initialDelaySeconds: 3, periodSeconds: 10}
+          livenessProbe: {httpGet: {path: /, port: http}, initialDelaySeconds: 10, periodSeconds: 20}
+          resources: {{- toYaml .Values.frontend.resources | nindent 12 }}

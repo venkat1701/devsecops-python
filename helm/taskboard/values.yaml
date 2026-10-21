@@ -1,28 +1,50 @@
-frontend:
-  image: ghcr.io/YOUR_ORG/taskboard-frontend
-  tag: latest
+# Default values for the TaskBoard chart. Environment overlays: values-local.yaml, values-dev.yaml, values-prod.yaml
+
 backend:
-  image: ghcr.io/YOUR_ORG/taskboard-backend
-  tag: latest
-replicaCount: 2
-namespace: taskboard
+  image: ghcr.io/venkat1701/taskboard-backend
+  tag: ""                 # CI sets this to the Git commit SHA; falls back to .Chart.AppVersion
+  pullPolicy: IfNotPresent
+  replicas: 2             # ignored while hpa.enabled (the HPA owns the replica count)
+  resources:
+    requests: {cpu: 100m, memory: 128Mi}
+    limits: {cpu: 500m, memory: 512Mi}
+
+frontend:
+  image: ghcr.io/venkat1701/taskboard-frontend
+  tag: ""
+  pullPolicy: IfNotPresent
+  replicas: 2
+  resources:
+    requests: {cpu: 50m, memory: 64Mi}
+    limits: {cpu: 200m, memory: 128Mi}
+
+# e.g. [{name: ghcr-pull}] when the GHCR packages are private
 imagePullSecrets: []
+
 postgres:
-  host: taskboard-postgres
+  image: postgres:16-alpine
   database: taskboard
   username: taskboard
-  password: taskboard
+  password: taskboard     # override with --set postgres.password=... outside of class demos
+  storage: 5Gi
+  storageClass: ""        # "" = cluster default StorageClass (EKS: apply k8s/storageclass-gp3.yaml)
+
 ingress:
-  enabled: false
-  host: taskboard.local
+  enabled: true
+  className: traefik
+  host: taskboard.localhost   # "" matches any host (useful with a cloud load balancer hostname)
+
 hpa:
   enabled: true
   minReplicas: 2
   maxReplicas: 6
   targetCPUUtilizationPercentage: 60
-resources:
-  requests: {cpu: 100m, memory: 256Mi}
-  limits: {cpu: 500m, memory: 512Mi}
+
 monitoring:
   serviceMonitor:
-    enabled: true
+    enabled: true         # only rendered when the Prometheus Operator CRDs exist in the cluster
+    interval: 15s
+    labels:
+      release: kube-prometheus-stack
+  grafanaDashboard:
+    enabled: true         # ConfigMap picked up by the Grafana sidecar (label grafana_dashboard=1)

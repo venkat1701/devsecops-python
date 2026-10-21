@@ -1,0 +1,11 @@
+# Local k3d cluster: images are imported with `k3d image import`, never pulled.
+backend:
+  image: taskboard-backend
+  tag: local
+  pullPolicy: Never
+frontend:
+  image: taskboard-frontend
+  tag: local
+  pullPolicy: Never
+ingress:
+  host: taskboard.localhost

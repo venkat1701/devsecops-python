@@ -1,10 +1,17 @@
-frontend:
-  image: ghcr.io/YOUR_ORG/taskboard-frontend
+# AWS EKS (managed by Argo CD, see argocd/application.yaml). CI bumps the tags below to the commit SHA.
 backend:
-  image: ghcr.io/YOUR_ORG/taskboard-backend
-replicaCount: 2
+  image: ghcr.io/venkat1701/taskboard-backend
+  tag: "1.1.0"
+frontend:
+  image: ghcr.io/venkat1701/taskboard-frontend
+  tag: "1.1.0"
+postgres:
+  storageClass: gp3
 ingress:
   enabled: true
-  host: taskboard.example.com
+  className: traefik
+  host: ""                # reach it via the ingress-nginx load balancer hostname
 hpa:
   enabled: true
+  minReplicas: 2
+  maxReplicas: 6
